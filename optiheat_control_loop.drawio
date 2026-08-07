@@ -1,0 +1,97 @@
+<mxfile host="app.diagrams.net" agent="OPTIHEAT">
+  <diagram id="optiheat-simple" name="Control Loop">
+    <mxGraphModel dx="2934" dy="1149" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;" value="Closed-loop heat-pump control" vertex="1">
+          <mxGeometry height="30" width="600" x="500" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ref" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=13;fontStyle=1;" value="T&lt;sub&gt;ref&lt;/sub&gt; = 20 °C" vertex="1">
+          <mxGeometry height="30" width="110" x="130" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="dist" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="T&lt;sub&gt;out&lt;/sub&gt;&lt;br&gt;&lt;font style=&quot;font-size: 11px;&quot;&gt;weather (disturbance)&lt;/font&gt;" vertex="1">
+          <mxGeometry height="55" width="160" x="470" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" value="&lt;b&gt;MPC&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 11px;&quot;&gt;12 h horizon&lt;/font&gt;" vertex="1">
+          <mxGeometry height="90" width="150" x="280" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="act" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=14;" value="&lt;b&gt;Heat pump&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 11px;&quot;&gt;IDM ALM 4-12&lt;/font&gt;" vertex="1">
+          <mxGeometry height="90" width="150" x="550" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="plant" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" value="&lt;b&gt;Building&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 11px;&quot;&gt;thermal model&lt;/font&gt;" vertex="1">
+          <mxGeometry height="90" width="150" x="820" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="out" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=13;fontStyle=1;" value="T&lt;sub&gt;room&lt;/sub&gt;" vertex="1">
+          <mxGeometry height="30" width="90" x="1080" y="355" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;entryX=0;entryY=0.5;" target="ctrl" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="240" y="385" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="ctrl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="act" value="u&lt;br&gt;&lt;font style=&quot;font-size: 11px;&quot;&gt;0 – 100 %&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="act" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="plant" value="Q&lt;sub&gt;heat&lt;/sub&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="plant" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;exitX=1;exitY=0.5;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1080" y="385" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="OjcEgHxwsJZT0sBMFp05-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;exitX=0;exitY=0.5;strokeColor=#6c8ebf;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" target="ctrl" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="660" y="220" />
+              <mxPoint x="317.5" y="220" />
+            </Array>
+            <mxPoint x="1140" y="150" as="sourcePoint" />
+            <mxPoint x="300" y="217.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="dist" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;exitX=0;exitY=0.5;entryX=0.5;entryY=0;strokeColor=#6c8ebf;" target="ctrl" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="355" y="287.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#3333ff;entryX=0.5;entryY=1;" target="ctrl" value="&lt;b&gt;measured room temperature&lt;/b&gt;">
+          <mxGeometry relative="1" x="0.0854" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1030" y="500" />
+              <mxPoint x="355" y="500" />
+            </Array>
+            <mxPoint x="1030" y="385" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dot" parent="1" style="ellipse;html=1;fillColor=#000000;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="10" width="10" x="1025" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="OjcEgHxwsJZT0sBMFp05-2" edge="1" parent="1" source="dist" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;exitX=1;exitY=0.5;entryX=0.5;entryY=0;strokeColor=#6c8ebf;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="plant" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+            <mxPoint x="590" y="228" as="sourcePoint" />
+            <mxPoint x="760" y="178" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OjcEgHxwsJZT0sBMFp05-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="T&lt;sub&gt;out&lt;/sub&gt;&lt;br&gt;&lt;font style=&quot;font-size: 11px;&quot;&gt;dynamic electricity (disturbance)&lt;/font&gt;" vertex="1">
+          <mxGeometry height="55" width="160" x="660" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="OjcEgHxwsJZT0sBMFp05-5" edge="1" parent="1" source="OjcEgHxwsJZT0sBMFp05-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;exitX=1;exitY=0.5;strokeColor=#6c8ebf;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" target="plant" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="820" y="220" />
+              <mxPoint x="932.5" y="220" />
+            </Array>
+            <mxPoint x="1110" y="260" as="sourcePoint" />
+            <mxPoint x="980" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
