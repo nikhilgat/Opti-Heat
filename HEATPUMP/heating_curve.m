@@ -11,8 +11,12 @@ function [T_supply_C, heating_on] = heating_curve(T_air_C)
 % off, so downstream COP/capacity interpolants never see an invalid
 % temperature. This constant is the single source of truth for the
 % heating limit -- hp_heater_physics.m reads it from here.
+%
+% 15 C is taken from the as-built hydraulic scheme
+% (LAN_Vir.6_HZ_SC_28.03.2025): "Heizgrenztemperatur und Bivalenzpunkt:
+% Die Heizgrenztemperatur ist dabei immer 15 C."
 
-HEATING_LIMIT_C = 16;
+HEATING_LIMIT_C = 15;
 
 T1_air = -10; T1_sup = 55;
 T2_air =  15; T2_sup = 35;
