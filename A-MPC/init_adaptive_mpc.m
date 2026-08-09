@@ -17,8 +17,8 @@ TinIC = 20;
 weatherData = readtable('DATA/weather_langenhagen_2025.csv');
 weatherData.timestamp = datetime(weatherData.timestamp, 'InputFormat', 'yyyy-MM-dd HH:mm:ss');
 
-startDate = datetime('2025-12-01');   % <-- set desired simulation start date
-simulationDays = 5;
+startDate = datetime('2025-07-01');   % <-- set desired simulation start date
+simulationDays = 10;
 nSamples = simulationDays*24*4;
 
 startIdx = find(weatherData.timestamp >= startDate, 1);
@@ -38,6 +38,35 @@ mpcobj.Model.Nominal.Y = TinIC;
 mpcobj.Model.Nominal.X = TinIC;
 mpcobj.MV(1).Min = 0;
 mpcobj.MV(1).Max = 1;
+
+% --- Room temperature bounds (OV constraint) ---
+% The upper bound is what stops the compressor's ~4 kW minimum modulation
+% floor from being dumped into the room during mild weather. Without it
+% nothing in the cost function penalises a 28 C room in a 20 C setpoint.
+%
+% HARD vs SOFT: MaxECR = 0 makes the bound hard. Be aware this is
+% physically unachievable in mild weather until the buffer tank exists --
+% at T_out = 14 C the building needs ~2.2 kW but the machine cannot go
+% below ~4.0 kW, so no admissible input satisfies the bound and the QP
+% goes infeasible. MPC Toolbox then falls back to the least-violating
+% solution and warns. Set T_room_max_ECR to a large positive number
+% (e.g. 1e5) to make it a heavily-weighted soft bound instead.
+T_room_min     = 19;
+T_room_max     = 24;
+T_room_max_ECR = 0;      % 0 = hard constraint; >0 = soft with that ECR
+
+mpcobj.OV(1).Min    = T_room_min;
+mpcobj.OV(1).Max    = T_room_max;
+mpcobj.OV(1).MinECR = 1;                 % lower bound stays soft (comfort)
+mpcobj.OV(1).MaxECR = T_room_max_ECR;
+
+if T_room_max_ECR == 0
+    boundType = 'HARD';
+else
+    boundType = 'soft';
+end
+fprintf('Room bounds: [%.1f, %.1f] C  (upper bound %s).\n', ...
+    T_room_min, T_room_max, boundType);
 mpcobj.Weights.MVRate = 0.1;
 mpcobj.Weights.OV = 1.0;
 
