@@ -119,7 +119,7 @@ Q_des = 1093 × (55 − 45) = 10.93 kW   ✓ matches "Heizkreis Q = 10,97 kW"
 
 This lumped value deliberately bundles the emitter conductance **and** the circuit flow-rate limit, which is what a single-node mixed tank requires. An earlier value of 369 W/K (derived from LMTD) was wrong for this model structure and over-delivered heat by ~18 %.
 
-### Tank standing loss, 1.9 W/K — [Guessing]
+### Tank standing loss, 1.9 W/K — [Estimated]
 
 Not available in the Planunterlagen. Estimated from geometry:
 
@@ -132,7 +132,7 @@ UA_tank ≈ 4.73 × 0.4 ≈ 1.9 W/K
 
 **Should be replaced with the Kermi datasheet standby-loss figure when available** (ErP class, kWh/24 h at 45 K ΔT). At 40 °C tank and 15 °C plant room this gives ≈ 47 W — small relative to the 4 kW compressor floor, so the estimate is not load-bearing for the main result.
 
-### Plant room temperature, 15 °C — [Guessing]
+### Plant room temperature, 15 °C — [Estimated]
 
 Unheated basement technical room. Not measured.
 

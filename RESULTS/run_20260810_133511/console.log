@@ -1,0 +1,48 @@
+===== analyze_run 20260810_133511 =====
+Results directory: C:\Users\nikhi\Documents\MATLAB\MPC\RESULTS\run_20260810_133511
+
+--- Run configuration ---
+  startDate        : 01-Jul-2025
+  simulationDays   : 10
+  Req              : 0.00273224
+  C_air            : 7.46e+07
+  T_room_min       : 19
+  T_room_max       : 24
+  T_room_max_ECR   : 0
+  Weather window   : 01-Jul-2025  ->  10-Jul-2025 23:45:00
+  StopTime         : 864000 s
+
+[Warning: Using find_system without the 'Variants' argument skips inactive Variant Subsystem blocks in the search. This behavior will change in a future release to look at all choices of the
+Variant Subsystem. To find blocks that are active in simulation or code generation, compile the model and use the built-in variant filters with the 'MatchFilter' option. To find all blocks
+use filter '@Simulink.match.allVariants' with the 'MatchFilter' option.] 
+[> In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 75)" style="font-weight:bold">analyze_run</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',75,0)">line 75</a>)] 
+Running simulation (this can take a while for long runs)...
+-->Integrator added as output disturbance model for measured output #1.
+-->"Model.Noise" is empty. Assuming white noise on each measured output.
+[Warning: Operating point T_air = 20.0 C, T_supply = 35.0 C is outside the measured IDM ALM 4-12 envelope (max supply here is 70.0 C). Using clamped datasheet values. This warning is issued
+once.] 
+[> In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('hp_capacity_lookup', 'C:\Users\nikhi\Documents\MATLAB\MPC\HEATPUMP\hp_capacity_lookup.m', 24)" style="font-weight:bold">hp_capacity_lookup</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\HEATPUMP\hp_capacity_lookup.m',24,0)">line 24</a>)
+In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('getAdaptivePlant', 'C:\Users\nikhi\Documents\MATLAB\MPC\SIM-MODEL\getAdaptivePlant.m', 8)" style="font-weight:bold">getAdaptivePlant</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\SIM-MODEL\getAdaptivePlant.m',8,0)">line 8</a>)
+In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('getAdaptivePlantMats', 'C:\Users\nikhi\Documents\MATLAB\MPC\SIM-MODEL\getAdaptivePlantMats.m', 5)" style="font-weight:bold">getAdaptivePlantMats</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\SIM-MODEL\getAdaptivePlantMats.m',5,0)">line 5</a>)
+In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 135)" style="font-weight:bold">analyze_run</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',135,0)">line 135</a>)] 
+
+===== RUN SUMMARY (10.0 days) =====
+HP compressor starts (cycles) : 34
+   -> 3.4 cycles/day   (0.14 cycles/hour)
+Electricity consumed          : 15.4 kWh   (1.5 kWh/day)
+Electricity cost (Tibber real): 5.07 EUR
+Average price paid            : 0.3296 EUR/kWh  (market mean 0.3200)
+--- Buffer tank ---
+Ttank min / mean / max        : 17.9 / 22.4 / 40.0 C
+Ttank swing                   : 22.1 K
+Tank standing loss            : 3.4 kWh  (0.34 kWh/day)
+=====================================
+(avg paid ~= market mean is expected: the controller is not yet
+ price-aware, so it does no load-shifting. That gap is the headroom.)
+[Warning: 2 logged signals are named 'Room'. Using the first. Rename the others to avoid ambiguity.] 
+[> In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run>fetchLogged', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 427)" style="font-weight:bold">analyze_run>fetchLogged</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',427,0)">line 427</a>)
+In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run>fetchOnTimeBase', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 512)" style="font-weight:bold">analyze_run>fetchOnTimeBase</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',512,0)">line 512</a>)
+In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run>plot_run', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 544)" style="font-weight:bold">analyze_run>plot_run</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',544,0)">line 544</a>)
+In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 234)" style="font-weight:bold">analyze_run</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',234,0)">line 234</a>)] 
+
+Saved to: C:\Users\nikhi\Documents\MATLAB\MPC\RESULTS\run_20260810_133511

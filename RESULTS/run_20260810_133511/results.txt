@@ -1,0 +1,14 @@
+days                   10
+cycles                 34
+cycles_per_day         3.4
+kWh                    15.3716
+cost_eur               5.06617
+avg_price_eur_kWh      0.329579
+market_mean_eur_kWh    0.319958
+tank_min_C             17.9018
+tank_mean_C            22.4316
+tank_max_C             40
+tank_swing_K           22.0982
+tank_loss_kWh          3.38553
+runDir                 C:\Users\nikhi\Documents\MATLAB\MPC\RESULTS\run_20260810_133511
+runStamp               20260810_133511

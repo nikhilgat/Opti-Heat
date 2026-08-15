@@ -1,0 +1,42 @@
+===== analyze_run 20260810_134802 =====
+Results directory: C:\Users\nikhi\Documents\MATLAB\MPC\RESULTS\run_20260810_134802
+
+--- Run configuration ---
+  startDate        : 15-Jan-2025
+  simulationDays   : 10
+  Req              : 0.00273224
+  C_air            : 7.46e+07
+  T_room_min       : 19
+  T_room_max       : 24
+  T_room_max_ECR   : 0
+  Weather window   : 15-Jan-2025  ->  24-Jan-2025 23:45:00
+  StopTime         : 864000 s
+
+[Warning: Using find_system without the 'Variants' argument skips inactive Variant Subsystem blocks in the search. This behavior will change in a future release to look at all choices of the
+Variant Subsystem. To find blocks that are active in simulation or code generation, compile the model and use the built-in variant filters with the 'MatchFilter' option. To find all blocks
+use filter '@Simulink.match.allVariants' with the 'MatchFilter' option.] 
+[> In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 75)" style="font-weight:bold">analyze_run</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',75,0)">line 75</a>)] 
+Running simulation (this can take a while for long runs)...
+-->Integrator added as output disturbance model for measured output #1.
+-->"Model.Noise" is empty. Assuming white noise on each measured output.
+
+===== RUN SUMMARY (10.0 days) =====
+HP compressor starts (cycles) : 185
+   -> 18.5 cycles/day   (0.77 cycles/hour)
+Electricity consumed          : 590.4 kWh   (59.0 kWh/day)
+Electricity cost (Tibber real): 233.75 EUR
+Average price paid            : 0.3959 EUR/kWh  (market mean 0.3931)
+--- Buffer tank ---
+Ttank min / mean / max        : 28.5 / 41.2 / 47.7 C
+Ttank swing                   : 19.2 K
+Tank standing loss            : 12.0 kWh  (1.20 kWh/day)
+=====================================
+(avg paid ~= market mean is expected: the controller is not yet
+ price-aware, so it does no load-shifting. That gap is the headroom.)
+[Warning: 2 logged signals are named 'Room'. Using the first. Rename the others to avoid ambiguity.] 
+[> In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run>fetchLogged', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 427)" style="font-weight:bold">analyze_run>fetchLogged</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',427,0)">line 427</a>)
+In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run>fetchOnTimeBase', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 512)" style="font-weight:bold">analyze_run>fetchOnTimeBase</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',512,0)">line 512</a>)
+In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run>plot_run', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 544)" style="font-weight:bold">analyze_run>plot_run</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',544,0)">line 544</a>)
+In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 234)" style="font-weight:bold">analyze_run</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',234,0)">line 234</a>)] 
+
+Saved to: C:\Users\nikhi\Documents\MATLAB\MPC\RESULTS\run_20260810_134802

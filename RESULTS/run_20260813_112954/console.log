@@ -1,0 +1,49 @@
+===== analyze_run 20260813_112954 =====
+Results directory: C:\Users\nikhi\Documents\MATLAB\MPC\RESULTS\run_20260813_112954
+
+--- Run configuration ---
+  startDate        : 15-Jan-2025
+  simulationDays   : 5
+  Req              : 0.00273224
+  C_air            : 7.46e+07
+  T_room_min       : 19
+  T_room_max       : 24
+  T_room_max_ECR   : 1
+  Weather window   : 15-Jan-2025  ->  19-Jan-2025 23:45:00
+  StopTime         : 432000 s
+
+[Warning: Using find_system without the 'Variants' argument skips inactive Variant Subsystem blocks in the search. This behavior will change in
+a future release to look at all choices of the Variant Subsystem. To find blocks that are active in simulation or code generation, compile the
+model and use the built-in variant filters with the 'MatchFilter' option. To find all blocks use filter '@Simulink.match.allVariants' with the
+'MatchFilter' option.] 
+[> In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 75)" style="font-weight:bold">analyze_run</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',75,0)">line 75</a>)] 
+Running simulation (this can take a while for long runs)...
+-->Integrator added as output disturbance model for measured output #1.
+-->Integrator added as output disturbance model for measured output #2.
+-->"Model.Noise" is empty. Assuming white noise on each measured output.
+
+===== RUN SUMMARY (5.0 days) =====
+HP compressor starts (cycles) : 113
+   -> 22.6 cycles/day   (0.94 cycles/hour)
+Mean run length per cycle     : 41.1 min
+Compressor ON fraction        : 64.4 %
+Intervals below modulation floor: 10.0 %
+Heat delivered                : 770.2 kWh   (154.0 kWh/day)
+Electricity consumed          : 290.7 kWh   (58.1 kWh/day)
+Seasonal performance factor   : 2.65
+Electricity cost (Tibber real): 113.31 EUR
+Average price paid            : 0.3898 EUR/kWh  (market mean 0.3973)
+--- Comfort ---
+Room min / max                : 19.0 / 20.5 C
+Hours below lower bound       : 0.2 h
+Hours above upper bound       : 0.0 h
+--- Buffer tank ---
+Ttank min / mean / max        : 27.7 / 40.2 / 46.9 C
+Ttank swing                   : 19.2 K
+Tank standing loss            : 5.7 kWh  (1.15 kWh/day)
+Stored heat change (end-start): +2.5 kWh thermal
+=====================================
+(avg paid ~= market mean is expected: the controller is not yet
+ price-aware, so it does no load-shifting. That gap is the headroom.)
+
+Saved to: C:\Users\nikhi\Documents\MATLAB\MPC\RESULTS\run_20260813_112954

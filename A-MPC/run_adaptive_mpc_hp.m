@@ -11,6 +11,13 @@ function [A,B,C,D,U,Y,X,DX] = run_adaptive_mpc_hp(T_air_C)
 %
 % Input T_air_C: wire from the existing [Tatm] Goto/From tag already in
 % HouseHeatingSystem.slx.
+%
+% 2-STATE MODEL (room + buffer tank):
+%   A,B,C,D are all 2x2. U, Y, X, DX are COLUMN vectors (2x1) -- the
+%   Adaptive MPC block's Matrix Signal Check rejects row vectors with
+%   "must be a matrix signal of 2 rows and 1 columns".
+%   The block's outputs MUST also be pre-sized to match, or the extrinsic
+%   assignment silently leaves them at their initial zeros.
 
 Ts = 900;
 T_supply_C = heating_curve(T_air_C);
@@ -18,20 +25,23 @@ T_supply_C = heating_curve(T_air_C);
 % --- Virchowstr. 6 lumped RC for the MPC INTERNAL model ---
 % Must match init_adaptive_mpc.m and the plant UA (patch_plant_to_virchowstr6.m).
 % UA = 366 W/K -> Req = 1/366 ;  C = 72 Wh/m2K x 287.92 m2 = 7.46e7 J/K.
-Req   = 1/366;
-C_air = 7.46e7;
-TinIC = 20;
+Req     = 1/366;
+C_air   = 7.46e7;
+C_tank  = 2.093e6;   % 500 kg x 4186 J/kgK (Kermi x-buffer compact 500)
+H_rad   = 312;       % 10968 W / (55-20) K
+TinIC   = 20;
+TtankIC = 40;
 
-plant_d = getAdaptivePlant(T_air_C, T_supply_C, Ts, Req, C_air);
+plant_d = getAdaptivePlant(T_air_C, T_supply_C, Ts, Req, C_air, C_tank, H_rad);
 
 A = plant_d.A;
 B = plant_d.B;
 C = plant_d.C;
 D = plant_d.D;
 
-U  = [0, T_air_C];
-Y  = TinIC;
-X  = TinIC;
-DX = 0;
+U  = [0; T_air_C];          % [MV ; MD]  -- inputs, not outputs
+Y  = [TinIC; TtankIC];
+X  = [TinIC; TtankIC];
+DX = [0; 0];
 
 end
