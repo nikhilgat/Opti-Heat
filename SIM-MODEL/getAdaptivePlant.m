@@ -70,7 +70,22 @@ UA = 1 / Req;
 h_trv = H_rad * (T_trv_set - T_room_C);
 h_trv = min(max(h_trv, H_RAD_MIN), H_rad);
 
-Qmax_W = hp_capacity_lookup(T_air_C, T_supply_C, 'max');
+% Heizgrenze (heating limit): the real heat pump is hard-gated off once
+% T_air_C reaches HEATING_LIMIT_C (15 C, see heating_curve.m) -- that gate
+% lives in hp_heater_physics.m, which the ACTUAL plant calls, but
+% hp_capacity_lookup does not know about it. Without this check the
+% controller's own model believes it always has capacity, commands the
+% compressor to run through the gated-off hours, gets zero real heat for
+% hours at a time, and only reacts once the gate reopens -- which lands
+% the recovery squarely on whatever price happens to be then. Zeroing
+% Qmax_W here keeps the internal model consistent with what the plant can
+% actually deliver at this instant.
+[~, heating_on] = heating_curve(T_air_C);
+if heating_on
+    Qmax_W = hp_capacity_lookup(T_air_C, T_supply_C, 'max');
+else
+    Qmax_W = 0;
+end
 
 A = [ -(h_trv + UA)/C_air ,   h_trv/C_air  ;
         h_trv/C_tank      ,  -h_trv/C_tank ];

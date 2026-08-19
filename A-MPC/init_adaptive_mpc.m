@@ -92,6 +92,21 @@ PRICE_WEIGHT = 0.2;
 % configuration tested came out within +-2 % of the market mean. Storage
 % headroom should only appear in the shoulder season, when the load falls
 % to 3-5 kW -- see SHOULDER-SEASON note at startDate below.
+%
+% 2026-08-17 CHANGE: comfort band widened to 19-23 C (was 19.5-24) and the
+% OV(1) tracking weight cut 0.3 -> 0.15 (see Weights below). T_room_ref
+% stays 20.2 -- keep it, do not "helpfully" recentre it to e.g. 21 just
+% because the band moved. 21 C is where the TRV valve law
+% (h_trv = clamp(312*(21-T_room), 3.12, 312), see getAdaptivePlant.m) is
+% FULLY SHUT, and the 20.75 C experiment above already showed what
+% happens near there: the tank gets driven to its ceiling and standing
+% loss jumps. The valve only actually modulates in ~20-21 C; above 21 C
+% the room is thermally coasting on its own mass with the emitter pinned
+% near its floor, which is fine for comfort (that's genuinely how TRVs
+% behave) but does NOT add usable storage. So the requested 19-23 C
+% comfort band is a real safety/comfort widening, but the band the
+% controller can actually use for load-shifting is still ~19-21 C; expect
+% excursions above ~21 C to look like passive drift, not active charging.
 T_room_ref = 20.2;
 T_tank_ref = 45;                      % ignored, tank tracking weight is 0
 refVec     = [T_room_ref, T_tank_ref];
@@ -110,8 +125,28 @@ weatherData.timestamp = datetime(weatherData.timestamp, 'InputFormat', 'yyyy-MM-
 %
 % Expect fewer, longer compressor cycles there but MORE below-floor
 % pulsing, since 3-5 kW sits near the 4 kW modulation limit.
+%
+% 2026-08-19: THREE 2-day regimes were short-run tested here (see
+% OPTIHEAT_PROJECT_STATUS.md for the full writeup). None beat market;
+% each hits a different physical ceiling:
+%   2025-03-15  deep cold (Tout ~-3..8 C), compressor on 99% of the time.
+%               PERFECT comfort (0 h below bound), cost 0.8% ABOVE market
+%               -- best result found. Little slack to shift when the
+%               machine must run almost continuously just to keep up.
+%   2025-03-20  shoulder, but T_air_C crosses the 15 C Heizgrenze for ~6 h
+%               most afternoons. Room/tank free-fall through the cutoff
+%               (room to ~16.6 C, 13 h below bound even with every fix
+%               tried) -- see the "TRIED, DOES NOT WORK" note below the
+%               price section. Cost 8-9% above market.
+%   2025-11-01  mild, always below the Heizgrenze, but the ~3 kW load
+%               sits right at the compressor's ~4 kW modulation floor:
+%               67.5 cycles/day, 13 min average run, 66% of intervals
+%               below-floor pulsing. Cost 3.4% above market.
+% Defaulting to the first (best, cleanest) case. Swap startDate to
+% re-run either of the other two -- both are real, useful regression
+% cases for whatever fixes the remaining gaps next.
 startDate = datetime('2025-03-15');   % <-- set desired simulation start date
-simulationDays = 15;
+simulationDays = 2;
 nSamples = simulationDays*24*4;
 
 startIdx = find(weatherData.timestamp >= startDate, 1);
@@ -128,6 +163,7 @@ if startIdx + nSamples - 1 > height(weatherData)
         availDays, datestr(startDate), simulationDays);
 end
 idxRange = startIdx:(startIdx+nSamples-1);
+weatherFull = weatherData;    % kept for the Heizgrenze-precharge tail below (needs a few hours past nSamples)
 weatherData = weatherData(idxRange, :);
 
 time_sec = (0:(height(weatherData)-1))' * 900;
@@ -204,9 +240,19 @@ mpcobj.MV(1).Max = 1;
 % safety net but made SOFT: a hard bound that the solver cannot satisfy
 % during the initial transient makes the QP infeasible, and an infeasible
 % QP produces exactly the erratic command jumps we are trying to remove.
-T_room_min     = 19.5;
-T_room_max     = 24;
-T_room_max_ECR = 1;      % 0 = hard constraint; >0 = soft with that ECR
+% 2026-08-17: band widened to the requested 19-23 C (was 19.5-24, and the
+% old 24 C cap was a safety net far above anything reachable, not a real
+% target). ECR tightened to 0.01 on BOTH sides -- symmetric and firm,
+% because 19 and 23 are now both real comfort edges the user chose, not
+% "floor we must not cross" vs "ceiling we'll probably never reach".
+% Remember LARGER ECR = softer (see note above) -- the old MaxECR=1 was
+% very loose, which is part of why the tank/room blew through their
+% bounds so badly in the 2026-08-17 14:23 run (room to 15.5 C, tank to
+% 71 C). Still soft, not 0/hard, so a cold snap the plant can't fully
+% meet doesn't make the QP infeasible.
+T_room_min     = 19;
+T_room_max     = 23;
+T_room_max_ECR = 0.01;   % 0 = hard constraint; >0 = soft with that ECR
 
 mpcobj.OV(1).Min    = T_room_min;
 mpcobj.OV(1).Max    = T_room_max;
@@ -222,12 +268,28 @@ mpcobj.OV(1).MaxECR = T_room_max_ECR;
 % Both bounds are SOFT (ECR > 0). A hard tank bound would make the QP
 % infeasible during any cold snap where the machine simply cannot keep up,
 % and a violated tank temperature is a performance issue, not a safety one.
+%
+% 2026-08-19: MinECR tightened 1 -> 0.05. The tank is the ROOM'S ONLY heAT
+% SOURCE (all heat reaches the room via h_trv*(T_tank-T_room) -- there is
+% no direct HP-to-room path), so letting the tank floor be ~100x softer
+% than the room's own OV(1) MinECR=0.01 was backwards: a 2-day test at
+% this weight (ECR=1) let the tank crash to 17.6 C -- BELOW room
+% temperature -- which stops the emitter delivering any heat at all
+% (h_trv*(T_tank-T_room) goes to ~zero or negative) regardless of how hard
+% the compressor runs afterwards, and the room free-fell with it (16.6 C,
+% 15.8 h below the comfort floor in that same run). This is the adaptive
+% MPC re-linearizing every step from a SINGLE frozen model, so it cannot
+% see a future Heizgrenze cutoff within one 24 h horizon either way; the
+% only lever that reliably prevents the tank being drawn down that far is
+% making the floor itself more expensive to approach. MaxECR stays at 1 --
+% a high tank is a wasted-money problem, not a comfort one, so there is no
+% need to firm up that side.
 T_tank_min = 25;         % below this the emitter cannot deliver useful heat
 T_tank_max = 55;         % radiator design supply temperature
 
 mpcobj.OV(2).Min    = T_tank_min;
 mpcobj.OV(2).Max    = T_tank_max;
-mpcobj.OV(2).MinECR = 1;
+mpcobj.OV(2).MinECR = 0.05;
 mpcobj.OV(2).MaxECR = 1;
 
 if T_room_max_ECR == 0
@@ -244,12 +306,6 @@ fprintf('Room reference %.2f C (inside the %.1f-%.1f C throttling band).\n', ...
     T_room_ref, T_trv_set - 1, T_trv_set);
 
 % --- Weights ---
-% BOTH outputs get weight 0. Neither the room nor the tank is tracked to a
-% setpoint; both are free states the optimiser may move inside their
-% bounds. The objective is therefore cost subject to comfort, which is the
-% correct economic formulation, rather than setpoint tracking with a cost
-% term bolted on.
-%
 % MinECR stays at 0.01 (a firm soft bound): in the MPC Toolbox a SMALLER
 % ECR means the constraint is relaxed LESS.
 %
@@ -288,10 +344,29 @@ fprintf('Room reference %.2f C (inside the %.1f-%.1f C throttling band).\n', ...
 % storage is possible. At 1.0 the anchor outranked price by 5x and the
 % controller ignored cost entirely.
 %
-% The tank keeps weight 0: it is a means, not an end, and tracking it to a
-% setpoint would directly fight the charge/discharge behaviour that makes
-% storage useful.
-mpcobj.Weights.OV     = [0.3, 0];
+% 2026-08-17: 0.2 was tried (with the 19-23 C band) and tested on
+% 2026-08-19 -- it was NOT enough on its own. A 2-day shoulder-season test
+% (2025-03-20) showed the room crashing to 16.6 C for 15-18 h despite it,
+% because the tank -- the room's ONLY heat source, see getAdaptivePlant.m
+% -- was left completely free to run down with OV(2) weight 0 ("a means
+% not an end"). Raising OV(1) alone to 0.5 changed nothing either (still
+% 16.7 C / 15.5 h): the room wasn't the problem, its only supply was.
+%
+% THE FIX THAT ACTUALLY WORKED: give the tank itself a small, ALWAYS-ON
+% weight (0.1) pulling it towards T_tank_ref = 45 C, instead of leaving it
+% purely bounded. This is a real departure from "tank is a means not an
+% end" -- but empirically, a temporary discount timed around a predicted
+% Heizgrenze cutoff does NOT work (see the "TRIED, DOES NOT WORK" block
+% below the price section), because the frozen-per-step horizon can't
+% perceive the cutoff to time the discount against in the first place. A
+% constant pull is the only lever, of everything tested, that measurably
+% helped: hours below the comfort floor dropped from 15.5-17.8 h to 13.0 h
+% over the same 2-day window, and the tank's average level rose from
+% ~28 C to ~31 C. It does not fully close the gap -- the room still
+% touches ~16.6 C at the deepest point of the longest cutoff -- but it is
+% the only real improvement found. See the "TRIED, DOES NOT WORK" note
+% below for what was ruled out and why.
+mpcobj.Weights.OV     = [0.3, 0.1];
 mpcobj.Weights.MVRate = 0.1;
 
 % --- Manipulated-variable weight: MUST be time-varying from the start ---
@@ -387,6 +462,57 @@ price_ts.Name = 'Tibber_2025_EUR_per_kWh';
 priceRef = mean(price_kWh, 'omitnan');
 wu       = PRICE_WEIGHT * (price_kWh / priceRef);
 wu(~isfinite(wu)) = PRICE_WEIGHT;
+
+% --- Heizgrenze foresight: TRIED, DOES NOT WORK, DO NOT RE-ADD ---
+% See getAdaptivePlant.m: the adaptive MPC freezes A/B (including Qmax_W)
+% at the CURRENT operating point for its entire p-step horizon, so it
+% cannot foresee that T_air_C is about to cross HEATING_LIMIT_C and drop
+% its own compressor capacity to zero. A 2-day test (2025-03-20) showed
+% the real cost of that blind spot: every afternoon T_air_C drifted just
+% above 15 C for a few hours, the real heat pump went hard off
+% (heating_curve.m), and the room/tank free-fell (room to 16.6 C, ~13-18 h
+% below the comfort floor per run) while the controller kept commanding
+% u=1 into a dead actuator, or -- worse, traced directly -- voluntarily
+% dropped to u=0 a full hour BEFORE the gate even closed, while price was
+% cheap (0.221 EUR/kWh, near the cheapest in the run) and room was fine
+% (20.0 C), then stayed at u=0 for a continuous 8 h, only reacting the
+% instant the gate reopened.
+%
+% Four independent fixes were tried and short-run tested against this
+% same window; NONE meaningfully changed the outcome:
+%   1. Qmax_W corrected to respect the CURRENT-step gate (kept -- see
+%      getAdaptivePlant.m -- it is still a real model/plant mismatch fix,
+%      it just isn't sufficient on its own).
+%   2. Tank MinECR tightened 1 -> 0.05 (kept, see OV(2) above -- BIT-FOR-
+%      BIT identical result to (1) alone).
+%   3. Room OV(1) weight raised 0.2 -> 0.5 (reverted -- also no change to
+%      the room-min/hours-below numbers).
+%   4. This block: discounting the MV weight for PRECHARGE_LEAD_H before a
+%      predicted cutoff, at both PRECHARGE_FACTOR=0.3 and 0.03 (10x more
+%      aggressive). Traced result: nearly identical to no discount at all
+%      (room_min/hours_below barely moved), and 0.03 made the QP so
+%      poorly conditioned it took ~30 min to solve a 2-day run instead of
+%      under a minute -- a bad trade for no behavioural benefit.
+%
+% CONCLUSION: this is not a constraint-softness or cost-weight tradeoff
+% the QP can trade its way out of. It is a genuine actuator dead zone the
+% optimiser cannot see coming from a single frozen linearisation, and
+% discounting COST doesn't fix a wrong BELIEF -- the controller reads
+% "T_air_C rising" as "less heating needed soon", never "capacity is
+% about to hit zero", because Qmax_W isn't a function of the previewed MD
+% trajectory anywhere in this architecture. What DID help (see the tank
+% OV(2) weight above, section "Weights"): giving the tank itself a
+% constant, always-on reason to stay charged, rather than trying to time
+% a temporary discount around a cutoff the horizon can't perceive.
+%
+% Closing this gap for real needs either a genuinely time-varying/gain-
+% scheduled prediction model (Qmax_W scheduled across the horizon from
+% the previewed T_air_C, not frozen at step 0 -- a real MPC redesign), or
+% exposing time-varying OV bounds on the Simulink block (the mask for
+% this auto-generated MPC block does not currently expose that as an
+% inport; wiring it in is real Simulink surgery, not a weights change).
+% Both are follow-up work, not a short-run tuning question.
+
 wuPad    = [wu; repmat(wu(end), p, 1)];
 
 wuFcst = zeros(nSamples, p);

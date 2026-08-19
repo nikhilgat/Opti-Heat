@@ -1,0 +1,25 @@
+===== analyze_run 20260815_143645 =====
+Results directory: C:\Users\nikhi\Documents\MATLAB\MPC\RESULTS\run_20260815_143645
+
+--- Run configuration ---
+  startDate        : 15-Mar-2025
+  simulationDays   : 15
+  Req              : 0.00273224
+  C_air            : 7.46e+07
+  T_room_min       : 19.5
+  T_room_max       : 24
+  T_room_max_ECR   : 1
+  Weather window   : 15-Mar-2025  ->  29-Mar-2025 23:45:00
+  StopTime         : 1296000 s
+
+[Warning: Using find_system without the 'Variants' argument skips inactive
+Variant Subsystem blocks in the search. This behavior will change in a future
+release to look at all choices of the Variant Subsystem. To find blocks that
+are active in simulation or code generation, compile the model and use the
+built-in variant filters with the 'MatchFilter' option. To find all blocks use
+filter '@Simulink.match.allVariants' with the 'MatchFilter' option.] 
+[> In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('analyze_run', 'C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m', 75)" style="font-weight:bold">analyze_run</a> (<a href="matlab: opentoline('C:\Users\nikhi\Documents\MATLAB\MPC\A-MPC\analyze_run.m',75,0)">line 75</a>)] 
+Running simulation (this can take a while for long runs)...
+-->Integrator added as output disturbance model for measured output #1.
+-->Integrator added as output disturbance model for measured output #2.
+-->"Model.Noise" is empty. Assuming white noise on each measured output.

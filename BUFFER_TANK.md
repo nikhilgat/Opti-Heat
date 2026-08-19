@@ -2,7 +2,7 @@
 
 **Project:** OPTIHEAT — Virchowstr. 6, Langenhagen
 **Model:** `HouseHeatingSystem.slx` (MATLAB/Simulink Adaptive MPC track)
-**Status:** Plant side complete. Controller side (2-state MPC) pending.
+**Status:** Plant side complete, including TRV throttling (§6). Controller side is now a working 2-state (room+tank) MPC with price in the objective (see `OPTIHEAT_PROJECT_STATUS.md` §4/§5 for the current, load-shifting-focused status — this file stays focused on the tank/emitter hardware and physics).
 
 ---
 
@@ -90,6 +90,8 @@ All from Simscape ▸ Foundation Library ▸ Thermal.
 
 For the two Convective Heat Transfer blocks only the **product** Area × coefficient matters; Area is set to 1 m² so the coefficient reads directly as the conductance in W/K.
 
+**TRV valve chain, added since the table above was written.** The `Emitter` block's coefficient is no longer the fixed 312 W/K constant shown in the table — it is driven by a small chain feeding the block's coefficient input: a `Constant` (21, the valve shut-off temperature) minus the current room temperature, through a `Gain` (312), through a `Saturation` block limited to `[3.12, 312]`. This reproduces `h_trv = clamp(312·(21−T_room), 3.12, 312)` inside the Simscape plant itself (see §6). **If the Saturation upper and lower limits are ever set equal, the whole valve chain goes dead and the emitter reverts to running wide open regardless of room temperature** — worth checking first if tank behaviour ever looks wrong.
+
 ---
 
 ## 5. Parameter derivation
@@ -140,20 +142,26 @@ Unheated basement technical room. Not measured.
 
 ## 6. How it works
 
-Two coupled energy balances:
+Two coupled energy balances, now with the emitter conductance **throttled by a thermostatic radiator valve (TRV)** rather than fixed:
 
 ```
-C_tank · dT_tank/dt = Q_hp − H_rad·(T_tank − T_room) − UA_tank·(T_tank − T_tech)
-C_air  · dT_room/dt =        H_rad·(T_tank − T_room) − UA·(T_room − T_out)
+h_trv = clamp( H_rad·(T_trv_set − T_room), H_RAD_MIN, H_rad )     -- valve position, recomputed every step
+
+C_tank · dT_tank/dt = Q_hp − h_trv·(T_tank − T_room) − UA_tank·(T_tank − T_tech)
+C_air  · dT_room/dt =        h_trv·(T_tank − T_room) − UA·(T_room − T_out)
 ```
 
-with `H_rad = 312`, `UA_tank = 1.9`, `UA = 366`, `C_tank = 2.093e6`, `C_air = 7.46e7`.
+with `H_rad = 312`, `H_RAD_MIN = 3.12`, `T_trv_set = 21` (Virchowstr. 6's manual TRVs sit at position 2-3), `UA_tank = 1.9`, `UA = 366`, `C_tank = 2.093e6`, `C_air = 7.46e7`.
 
-Tank time constant:
+**This is the mechanism that actually lets the tank hold charge.** With `h_trv` fixed at 312 (the old model), heat flows into the room as fast as the tank-room ΔT allows, and the tank self-discharges about as fast as it's charged — a damper, not a store. The TRV closes as the room approaches 21°C (fully open at ≤20°C, shut at 21°C, a 1K proportional band), so once the room is comfortable the valve throttles the draw and the tank can actually run hot. §8 covers what this does and doesn't buy in practice.
+
+Tank time constant (valve fully open, worst case for how fast it self-discharges):
 
 ```
 τ_tank = C_tank / (H_rad + UA_tank) = 2.093e6 / 314 ≈ 6660 s ≈ 1.85 h
 ```
+
+With the valve throttled towards 21°C, the effective time constant is longer — `h_trv` can fall as low as 3.12 W/K, stretching `τ_tank` towards `2.093e6/5 ≈ 4.2e5 s ≈ 116 h` in the limit.
 
 Store capacity:
 
@@ -166,50 +174,49 @@ Against a 10.97 kW design load that is roughly **1 hour of full-load autonomy**;
 
 ---
 
-## 7. Expected behaviour
+## 7. Expected behaviour — now measured, not just predicted
 
-A smoke test should be run over ~3 days starting in a **mild shoulder period** (e.g. 2025-10-15). July is above the 15 °C Heizgrenze, so the heat pump stays off and the test would show nothing.
+The four original smoke-test checks below all pass in current short runs (`init_adaptive_mpc.m` → `analyze_run.m`, 1-2 day windows — see `OPTIHEAT_PROJECT_STATUS.md` §5 item 1 for the full results across three weather regimes):
 
-Four checks:
+1. **`Ttank` reads 30–50, not ~313** — confirmed; typical runs show `Ttank` in the high-20s to low-40s °C depending on season.
+2. **`Ttank` drifts smoothly and does not go negative** — confirmed.
+3. **`Ttank` sits above `Troom`** — confirmed **except during a Heizgrenze cutoff that runs long enough to draw the tank down toward room temperature**, at which point the emitter has nothing left to deliver and the room starts falling too (see `OPTIHEAT_PROJECT_STATUS.md` §5 item 1 for the traced example — tank fell to 17.5°C, below the room, during an extended afternoon cutoff). This is the current live edge case, not a modelling bug.
+4. **Room sawtooth is slower and shallower than the pre-tank July run** — confirmed; the tank measurably absorbs the compressor floor (see §8).
 
-1. **`Ttank` reads 30–50, not ~313** — confirms the PS-Simulink Converter is in °C with affine conversion, not Kelvin.
-2. **`Ttank` drifts smoothly and does not go negative** — confirms Temperature Source port orientation (a reversed source pulls the node toward −288 °C).
-3. **`Ttank` sits above `Troom`** — confirms emitter direction; heat must flow tank → room.
-4. **Room sawtooth is slower and shallower than the pre-tank July run** — the tank is absorbing the compressor floor. This is the headline result.
-
-Expected steady state with the HP at its 4 kW floor:
+Expected steady state with the HP at its 4 kW floor, valve fully open (`h_trv=312`, i.e. room at or below 20°C):
 
 ```
 312 · (T_tank − T_room) + losses ≈ 4000 W  →  T_tank ≈ T_room + 13 K
 ```
 
-so the tank parks around 33 °C during mild weather.
+but with the TRV throttling as the room approaches 21°C, the same 4 kW needs a much larger ΔT to get through a smaller `h_trv` — this is exactly the mechanism that lets the tank run hotter (and hold more usable charge) once the room is comfortable, at the cost of needing more tank-side temperature to push the same power through.
 
 ---
 
 ## 8. Known limitations
 
-**The emitter is an unconditional conductance.** Heat flows whenever `T_tank > T_room`, with no pump or mixer gating. The real installation has pumps M31.1/M31.2 and 3-way mixer M41 controlling that draw. Consequence: **the tank self-discharges as fast as it is charged.** The current build therefore delivers cycle reduction but very little price-shifting capability. Adding a pump gate — draw only when the room actually calls for heat — is the natural next increment and is what turns the buffer into a genuine store.
+**The emitter is throttled by the TRV, not gated by a pump.** ✅ **Resolved differently than originally planned.** The original plan here was a pump/mixer gate (draw only when the room calls for heat, mirroring the real M31.1/M31.2 + M41 hardware). What was actually built instead is the TRV valve law in §6 — a continuous, physically-motivated throttle rather than a binary gate, and it achieves the same goal (letting the tank hold charge) by a different, simpler mechanism already present in the real building (residents' thermostatic valves). **Net effect measured, not just modelled:** the tank now genuinely holds charge and swings independently of room temperature across short test runs — see `OPTIHEAT_PROJECT_STATUS.md` §5 item 1. It is not, however, a complete fix for load-shifting: that same document traces a specific failure mode where an extended Heizgrenze cutoff can still draw the tank down far enough to lose its ΔT advantage over the room. A literal pump gate was not found necessary to get this far, but is not ruled out as a future refinement either.
 
-This is a defensible v1 because it isolates the anti-cycling effect from the load-shifting effect, which are separate claims.
+**The MPC internal model is now 2-state.** ✅ **Resolved.** `getAdaptivePlant.m` predicts `x=[T_room;T_tank]`, including the TRV law, and the live "MPC Prediction Model" Stateflow chart calls it every control step with the real current room temperature. See `OPTIHEAT_PROJECT_STATUS.md` §4.
 
-**The 6 kW Heizstab is not modelled.** Only relevant below roughly −5 °C outdoor, where the HP (8.67 kW at −15 °C) cannot meet the ~11 kW load. It runs at COP 1, roughly double the cost per kWh of heat versus the heat pump at cold conditions, so it matters for winter cost figures. Decision pending on whether to implement it as a plant-side rule (keeps one MV) or a second MPC decision variable.
+**The 6 kW Heizstab is not modelled.** Still open. Only relevant below roughly −5 °C outdoor, where the HP (8.67 kW at −15 °C) cannot meet the ~11 kW load. It runs at COP 1, roughly double the cost per kWh of heat versus the heat pump at cold conditions, so it matters for winter cost figures. Decision pending on whether to implement it as a plant-side rule (keeps one MV) or a second MPC decision variable.
 
-**The MPC internal model is still 1R1C.** The controller does not know the tank exists and predicts as though it heats the room directly. Control quality will be poor until step 3 upgrades `getAdaptivePlant` to a 2-state model. This is expected, not a fault.
-
-**`HP Physics` still takes `T_supply_C` from the Heating Curve.** The condenser temperature should be `Ttank`, since with a buffer the flow temperature is a state rather than a weather function. Rewiring is pending; the heating curve's role changes from "actual supply temperature" to "tank charging setpoint".
+**`HP Physics` still takes `T_supply_C` from the Heating Curve, not `Ttank`.** Still open. The condenser temperature should be a function of the tank state, since with a buffer the flow temperature is a state rather than a weather function. Rewiring is pending; the heating curve's role would change from "actual supply temperature" to "tank charging setpoint".
 
 **Single-node, fully mixed.** No stratification. Justified by the single real sensor B38, but it does mean the model cannot represent a hot top layer serving the circuit while the bottom is still cold.
+
+**The MPC's prediction of tank charging capacity is frozen per control step, not scheduled across the horizon.** New finding, 2026-08-19 — see `OPTIHEAT_PROJECT_STATUS.md` §5 item 1 for the full trace. The Adaptive MPC re-linearises from the current operating point and holds that model fixed for the whole 24 h prediction, so it cannot foresee the tank's charging capacity (`Qmax_W`) dropping to zero when outdoor temperature crosses the 15°C Heizgrenze partway through the horizon. This is the main reason the tank sometimes isn't pre-charged enough heading into a cutoff, and it's an MPC-architecture question, not a tank-hardware one.
 
 ---
 
 ## 9. Outstanding items
 
-| # | Item |
-|---|---|
-| 1 | Replace estimated `UA_tank = 1.9 W/K` with Kermi datasheet standby loss |
-| 2 | Step 3 — `getAdaptivePlant` 1R1C → 2-state; re-add Mux to `mo` as `[Troom; Ttank]` |
-| 3 | Step 4 — rewire `HP Physics` `T_supply_C` from Heating Curve to `Ttank` |
-| 4 | Decide Heizstab treatment (plant-side rule vs. second MV) |
-| 5 | Add pump/mixer gate on the emitter to enable real load shifting |
-| 6 | `analyze_run` — log and plot `Ttank`; name the top-level line `Ttank` |
+| # | Item | Status |
+|---|---|---|
+| 1 | Replace estimated `UA_tank = 1.9 W/K` with Kermi datasheet standby loss | Open |
+| 2 | `getAdaptivePlant` 1R1C → 2-state; reconnect `mo` Mux as `[Troom; Ttank]` | ✅ Done |
+| 3 | Rewire `HP Physics` `T_supply_C` from Heating Curve to `Ttank` | Open |
+| 4 | Decide Heizstab treatment (plant-side rule vs. second MV) | Open |
+| 5 | ~~Add pump/mixer gate on the emitter~~ — superseded by the TRV valve law (§6/§8) | ✅ Done (different mechanism) |
+| 6 | `analyze_run` — log and plot `Ttank`; name the top-level line `Ttank` | ✅ Done |
+| 7 | Give the MPC foresight of the Heizgrenze cutoff within its own prediction horizon | Open — see `OPTIHEAT_PROJECT_STATUS.md` §5 item 1 / §8 item 1, highest priority |
