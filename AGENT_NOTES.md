@@ -48,11 +48,29 @@ consider `.gitignore`), `slprj/`, build cache. Same as before, not touched.
 ## 3. If you're picking this up next
 
 The highest-value next step is `OPTIHEAT_PROJECT_STATUS.md` §8 item 1:
-close the Heizgrenze-foresight gap, either via a genuinely time-varying/
-gain-scheduled prediction model, or by exposing time-varying OV bounds on
-the Simulink MPC block (its mask does not currently expose that as an
-inport — this needs real Simulink structural surgery, not an
-`init_adaptive_mpc.m` weight change).
+close the Heizgrenze-foresight gap. **Try this first (user-suggested
+2026-08-20, not yet implemented):** replace the instantaneous per-sample
+Heizgrenze gate (`T_air_C < 15°C`, re-checked every 15 min) with a
+daily-mean or calendar heating-season gate. The traced failure case
+(2025-03-20) has a daily-mean T_air_C ~9°C but instantaneous afternoon
+readings briefly cross 15°C -- that instantaneous crossing is what
+creates the within-day capacity cliff the frozen-horizon MPC can't
+foresee. Smoothing the gate likely removes the cliff at its source,
+probably more cheaply than the two heavier options below, and is also
+more physically realistic (real plant controls don't toggle off for a
+few afternoon hours on momentary temperature). Touches `heating_curve.m`
+(update `HEATING_LIMIT_C` check), and needs applying to BOTH the real
+plant path (`hp_heater_physics.m`) and the MPC's own internal model
+(`getAdaptivePlant.m`) — see §5 item 1 fix (c) in
+`OPTIHEAT_PROJECT_STATUS.md` for the full writeup. Re-run the same
+three-regime short tests afterward to confirm the shoulder-season case
+improves without regressing the other two.
+
+If that isn't enough on its own, the two heavier options are: a
+genuinely time-varying/gain-scheduled prediction model, or exposing
+time-varying OV bounds on the Simulink MPC block (its mask does not
+currently expose that as an inport — this needs real Simulink structural
+surgery, not an `init_adaptive_mpc.m` weight change).
 
 **Do NOT re-attempt an MV-weight-discount approach** to give the
 controller foresight — tried at two strengths (0.3x and 0.03x), both

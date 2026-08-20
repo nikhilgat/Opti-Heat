@@ -145,8 +145,8 @@ weatherData.timestamp = datetime(weatherData.timestamp, 'InputFormat', 'yyyy-MM-
 % Defaulting to the first (best, cleanest) case. Swap startDate to
 % re-run either of the other two -- both are real, useful regression
 % cases for whatever fixes the remaining gaps next.
-startDate = datetime('2025-03-15');   % <-- set desired simulation start date
-simulationDays = 2;
+startDate = datetime('2025-08-15');   % <-- set desired simulation start date
+simulationDays = 10;
 nSamples = simulationDays*24*4;
 
 startIdx = find(weatherData.timestamp >= startDate, 1);
